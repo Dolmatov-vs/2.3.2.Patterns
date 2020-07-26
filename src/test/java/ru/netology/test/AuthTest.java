@@ -1,42 +1,23 @@
 package ru.netology.test;
 
-import com.codeborne.selenide.Condition;
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.filter.log.LogDetail;
-import io.restassured.http.ContentType;
-import io.restassured.specification.RequestSpecification;
-import org.junit.jupiter.api.BeforeAll;
+import com.github.javafaker.Faker;
 import org.junit.jupiter.api.Test;
 import ru.netology.data.UserData;
 
+import java.util.Locale;
+import java.util.Random;
+
 import static com.codeborne.selenide.Selectors.byText;
+import static com.codeborne.selenide.Selectors.withText;
 import static com.codeborne.selenide.Selenide.$;
 import static com.codeborne.selenide.Selenide.open;
-import static io.restassured.RestAssured.given;
+import static com.codeborne.selenide.Condition.*;
+import static ru.netology.data.UserData.newUser;
 
 public class AuthTest {
-    private static RequestSpecification requestSpec = new RequestSpecBuilder()
-            .setBaseUri("http://localhost")
-            .setPort(9999)
-            .setAccept(ContentType.JSON)
-            .setContentType(ContentType.JSON)
-            .log(LogDetail.ALL)
-            .build();
+    Faker faker = new Faker(new Locale("en"));
 
-
-    @BeforeAll
-    static void setUpAll(UserData.UserInfo userInfo) {
-        // сам запрос
-        given() // "дано"
-                .spec(requestSpec) // указываем, какую спецификацию используем
-                .body(userInfo) // передаём в теле объект, который будет преобразован в JSON
-                .when() // "когда"
-                .post("/api/system/users") // на какой путь, относительно BaseUri отправляем запрос
-                .then() // "тогда ожидаем"
-                .statusCode(200); // код 200 OK
-    }
-
-    private void loginForm (String login, String password) {
+    void loginForm(String login, String password) {
         open("http://localhost:9999");
         $("[data-test-id=login] input").setValue(login);
         $("[data-test-id=password] input").setValue(password);
@@ -44,10 +25,36 @@ public class AuthTest {
     }
 
     @Test
-    public void shouldLoginExistsActiveUser() {
-        UserData.UserInfo user = UserData.getUserInfo(false);
-        setUpAll(user);
+    public void shouldLoginWithValidActiveUser() {
+        UserData.UserInfo user = newUser( false);
         loginForm(user.getLogin(), user.getPassword());
-        $(byText("Личный кабинет")).waitUntil(Condition.visible, 15000);
+        $(byText("Личный кабинет")).waitUntil(visible, 15000);
+    }
+    @Test
+    public void shouldGetErrorIfNotRegisteredUser() {
+        UserData.UserInfo user = newUser( false);
+        loginForm(faker.name().username(), faker.internet().password());
+        $(withText("Неверно указан логин или пароль")).waitUntil(visible, 15000);
+    }
+
+    @Test
+    public void shouldGetErrorIfUserBlocked() {
+        UserData.UserInfo user = newUser( true);
+        loginForm(user.getLogin(), user.getPassword());
+        $(withText("Пользователь заблокирован")).waitUntil(visible, 15000);
+    }
+
+    @Test
+    public void shouldGetErrorIfInvalidLogin() {
+        UserData.UserInfo user = newUser( true);
+        loginForm(faker.name().username(), user.getPassword());
+        $(withText("Неверно указан логин или пароль")).waitUntil(visible, 15000);
+    }
+
+    @Test
+    public void shouldGetErrorIfInvalidPassword() {
+        UserData.UserInfo user = newUser( true);
+        loginForm(user.getLogin(), faker.internet().password());
+        $(withText("Неверно указан логин или пароль")).waitUntil(visible, 15000);
     }
 }
