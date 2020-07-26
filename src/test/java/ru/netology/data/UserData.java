@@ -56,6 +56,5 @@ public class UserData {
         setUpAll(user);
         return user;
     }
-
 }
 

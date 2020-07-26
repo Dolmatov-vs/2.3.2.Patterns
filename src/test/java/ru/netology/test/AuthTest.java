@@ -5,7 +5,6 @@ import org.junit.jupiter.api.Test;
 import ru.netology.data.UserData;
 
 import java.util.Locale;
-import java.util.Random;
 
 import static com.codeborne.selenide.Selectors.byText;
 import static com.codeborne.selenide.Selectors.withText;
