@@ -31,7 +31,6 @@ public class AuthTest {
     }
     @Test
     public void shouldGetErrorIfNotRegisteredUser() {
-        UserData.UserInfo user = newUser( false);
         loginForm(faker.name().username(), faker.internet().password());
         $(withText("Неверно указан логин или пароль")).waitUntil(visible, 15000);
     }
